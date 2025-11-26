@@ -10,6 +10,7 @@ from utils import (
     filter_recipes_by_ids,
     get_weekly_ingredients,
     DOLLAR_PESO_RATE,
+    filter_recipes_pantry,
 )
 from genetic_algorithm import (
     generar_plan_2_dias_ga,
@@ -85,9 +86,10 @@ with st.sidebar:
                     random_seed=42,
                 )
                 # Recipes with fields 'index', 'id_json', 'title', 'ingredients_list', 'calories', 'protein', 'carbs', 'fat', 'dishTypes', 'meal_type', 'matched', 'missing_common', 'missing_normal', 'missing', 'missing_count'
-                recipes = result["selection"]
-                recipes = complete_gen_recipes(db, recipes)
-                st.session_state["weekly_data"] = order_recipes_by_day(recipes, mode)
+                recipes_ids = result["selection_ids"]
+                recipes_info= result["selection"]
+                filtered_recipes= filter_recipes_pantry(db, recipes_ids, recipes_info)
+                st.session_state["weekly_data"] = generate_weekly_plan(filtered_recipes, mode)
             else:
                 recipes_ids, totals = build_week_plan(
                     budget_week=user_data["budget"],
@@ -99,7 +101,6 @@ with st.sidebar:
                 )
                 filtered_recipes = filter_recipes_by_ids(db, recipes_ids)
                 st.session_state["weekly_data"] = generate_weekly_plan(filtered_recipes)
-                time.sleep(3)
             st.success("Recetas creadas :)", icon=":material/award_meal:")
 
 

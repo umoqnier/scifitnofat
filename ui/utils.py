@@ -33,7 +33,7 @@ def get_nutrient(recipe, name):
     return "0"
 
 
-def generate_weekly_plan(filtered_recipes):
+def generate_weekly_plan(filtered_recipes, mode):
     """
     Generates a weekly plan using ONLY the provided list of filtered recipes.
     Classifies them into Breakfast/Main pools based on keywords.
@@ -41,34 +41,48 @@ def generate_weekly_plan(filtered_recipes):
     days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     plan = {}
 
-    # 1. Classify Recipes from the filtered list
-    morning_keywords = {
-        "morning meal",
-        "brunch",
-        "beverage",
-        "breakfast",
-        "drink",
-    }
-    main_keywords = {"lunch", "main course", "main dish", "dinner"}
+    if mode == 1:
+        breakfast_pool = [r for r in filtered_recipes if r.get("meal_type") == "breakfast"]
+        lunch_pool = [r for r in filtered_recipes if r.get("meal_type") == "lunch"]
+        dinner_pool = [r for r in filtered_recipes if r.get("meal_type") == "dinner"]
 
-    # Filter using set intersection
-    breakfast_pool = [
-        r
-        for r in filtered_recipes
-        if not morning_keywords.isdisjoint(set(r.get("dishTypes", [])))
-    ]
-    main_pool = [
-        r
-        for r in filtered_recipes
-        if not main_keywords.isdisjoint(set(r.get("dishTypes", [])))
-    ]
+        if not breakfast_pool:
+            breakfast_pool = filtered_recipes
+        if not lunch_pool:
+            lunch_pool = filtered_recipes
+        if not dinner_pool:
+            dinner_pool = lunch_pool
+        main_pool_dict = {r["id"]: r for r in (lunch_pool + dinner_pool)}
+        main_pool = list(main_pool_dict.values())
+    else:
+        # 1. Classify Recipes from the filtered list
+        morning_keywords = {
+            "morning meal",
+            "brunch",
+            "beverage",
+            "breakfast",
+            "drink",
+        }
+        main_keywords = {"lunch", "main course", "main dish", "dinner"}
 
-    # Fallback if filtered lists are too small (mock data safety)
-    # If the filtered list has no breakfasts, we force it to use what is available
-    if not breakfast_pool:
-        breakfast_pool = filtered_recipes
-    if not main_pool:
-        main_pool = filtered_recipes
+        # Filter using set intersection
+        breakfast_pool = [
+            r
+            for r in filtered_recipes
+            if not morning_keywords.isdisjoint(set(r.get("dishTypes", [])))
+        ]
+        main_pool = [
+            r
+            for r in filtered_recipes
+            if not main_keywords.isdisjoint(set(r.get("dishTypes", [])))
+        ]
+
+        # Fallback if filtered lists are too small (mock data safety)
+        # If the filtered list has no breakfasts, we force it to use what is available
+        if not breakfast_pool:
+            breakfast_pool = filtered_recipes
+        if not main_pool:
+            main_pool = filtered_recipes
 
     # 2. Tracking for Anti-Repetition
     last_breakfast_id = None
@@ -158,10 +172,41 @@ def get_weekly_ingredients(weekly_plan):
 
     for day, meals in weekly_plan.items():
         for meal in meals:
-            for ingredient in meal.get("extendedIngredients", []):
+            breakpoint()
+            for ingredient in meal.get("missed", []):
                 # We use the 'original' string as the unique key
                 # In a real scenario with structured data, you would sum numeric amounts based on units
                 name = ingredient.get("original", "Unknown Ingredient")
                 ingredients_counter[name] = ingredients_counter.get(name, 0) + 1
 
     return ingredients_counter
+
+def filter_recipes_pantry(all_recipes, target_ids, recipes_info):
+    """Filters all recipes and attaches metadata (like meal_type) from recipes_info."""
+    
+    target_id_set = set(target_ids)
+
+    # Build lookup by id_json
+    info_by_id = {info["id_json"]: info for info in recipes_info}
+
+    filtered_recipes = []
+
+    for recipe in all_recipes:
+        recipe_id = recipe.get("id")
+
+        if recipe_id in target_id_set:
+            # Copy the recipe to avoid modifying the original
+            r = recipe.copy()
+
+            # If this ID exists in the metadata info, merge it
+            if recipe_id in info_by_id:
+                r.update({
+                    "meal_type": info_by_id[recipe_id]["meal_type"],
+                    "matched": info_by_id[recipe_id]["matched"],
+                    "missing": info_by_id[recipe_id]["missing"],
+                    "missing_count": info_by_id[recipe_id]["missing_count"],
+                })
+
+            filtered_recipes.append(r)
+
+    return filtered_recipes

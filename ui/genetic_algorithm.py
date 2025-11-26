@@ -406,10 +406,10 @@ def generar_plan_2_dias_ga(
     daily_fat = float(user_data["fat"])
 
     target_macros = {
-        "calories": daily_cal,
-        "protein": daily_prot,
-        "carbs": daily_carb,
-        "fat": daily_fat,
+        "calories": daily_cal*2,
+        "protein": daily_prot*2,
+        "carbs": daily_carb*2,
+        "fat": daily_fat*2,
     }
 
     recipes_enriched = []
