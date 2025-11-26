@@ -41,7 +41,13 @@ def generate_weekly_plan(filtered_recipes):
     plan = {}
 
     # 1. Classify Recipes from the filtered list
-    morning_keywords = {"morning meal", "brunch", "beverage", "breakfast", "drink"}
+    morning_keywords = {
+        "morning meal",
+        "brunch",
+        "beverage",
+        "breakfast",
+        "drink",
+    }
     main_keywords = {"lunch", "main course", "main dish", "dinner"}
 
     # Filter using set intersection
@@ -118,34 +124,6 @@ def generate_weekly_plan(filtered_recipes):
         # Save to plan
         plan[day] = daily_menu
 
-    return plan
-
-
-def generate_weekly_plan_old(mock_recipe: dict):
-    """Simulates your friend's logic: Generates 3 meals for 7 days."""
-    days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-    plan = {}
-
-    # We create 3 copies of the mock recipe per day for demonstration
-
-    for day in days:
-        plan[day] = [
-            {
-                **mock_recipe,
-                "title": f"Desayuno: {mock_recipe['title']}",
-                "meal_type": "Desayuno",
-            },
-            {
-                **mock_recipe,
-                "title": f"Comida: {mock_recipe['title']}",
-                "meal_type": "Comida",
-            },
-            {
-                **mock_recipe,
-                "title": f"Cena: {mock_recipe['title']}",
-                "meal_type": "Cena",
-            },
-        ]
     return plan
 
 

@@ -13,6 +13,7 @@ from genetic_algorithm import (
     COMMON_MISSING_PENALTY,
     NORMAL_MISSING_PENALTY,
 )
+from greedy_algorithm import build_week_plan
 
 db = load_json(RECIPIES_FILE)
 
@@ -50,6 +51,7 @@ with st.sidebar:
     if st.button("Generar Plan Semanal", type="primary"):
         st.session_state["plan_generated"] = True
         user_data = {
+            "budget": budget,
             "ingredients": ingredients,
             "kcal": kcal_target,
             "proteins": proteins_target,
@@ -59,22 +61,33 @@ with st.sidebar:
         # Here you would call your friend's function:
         # st.session_state['weekly_data'] = efficient_recipe_selector(ingredients, macros, budget)
         data = load_and_prepare(RECIPIES_FILE)
-        result = generar_plan_2_dias_ga(
-            data,
-            user_data,
-            weight_cal=1.0,
-            weight_pro=1.0,
-            weight_carb=1.0,
-            weight_fat=1.0,
-            common_missing_penalty=COMMON_MISSING_PENALTY,
-            normal_missing_penalty=NORMAL_MISSING_PENALTY,
-            pop_size=300,
-            generations=500,
-            mutation_rate=0.12,
-            elite_frac=0.06,
-            random_seed=42,
-        )
-        filtered_recipes = filter_recipes_by_ids(db, result["selection_ids"])
+        if mode == 1:
+            result = generar_plan_2_dias_ga(
+                data,
+                user_data,
+                weight_cal=1.0,
+                weight_pro=1.0,
+                weight_carb=1.0,
+                weight_fat=1.0,
+                common_missing_penalty=COMMON_MISSING_PENALTY,
+                normal_missing_penalty=NORMAL_MISSING_PENALTY,
+                pop_size=300,
+                generations=500,
+                mutation_rate=0.12,
+                elite_frac=0.06,
+                random_seed=42,
+            )
+            recipes_ids = result["selection_ids"]
+        else:
+            recipes_ids, totals = build_week_plan(
+                budget_week=user_data["budget"],
+                cal_target_day=user_data["kcal"],
+                p_target_day=user_data["proteins"],
+                f_target_day=user_data["fat"],
+                c_target_day=user_data["carbs"],
+                max_repeats_per_recipe=2,
+            )
+        filtered_recipes = filter_recipes_by_ids(db, recipes_ids)
         st.session_state["weekly_data"] = generate_weekly_plan(filtered_recipes)
 
 
@@ -89,7 +102,7 @@ if "plan_generated" not in st.session_state:
     # st.write("Selecciona tus ingredientes (Simulado):")
     # st.multiselect("Ingredientes", ["Aguacate", "Pollo", "Arroz"], ["Aguacate"])
 else:
-    if len(ingredients) == 0 and "plan_generated" in st.session_state:
+    if mode == 1 and len(ingredients) == 0 and "plan_generated" in st.session_state:
         st.session_state["plan_generated"] = False
         st.warning("👈 Selecciona tus ingredientes primero")
     elif "plan_generated" in st.session_state:
@@ -136,7 +149,7 @@ else:
                         col_img, col_info = st.columns([1, 2])
 
                         with col_img:
-                            st.image(recipe["image"], use_container_width=True)
+                            st.image(recipe["image"], width="stretch")
                             # Display Tags
                             tags = [
                                 diet.title() for diet in recipe.get("diets", [])[:3]
