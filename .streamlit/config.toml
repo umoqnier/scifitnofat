@@ -1,0 +1,23 @@
+# Global settings applicable to both themes
+[theme]
+font = "sans serif"
+
+# --- Light Mode ("The Dietitian" / Medical Pro Look) ---
+[theme.light]
+primaryColor = "#4CAF50"              # Fresh Green
+backgroundColor = "#FFFFFF"           # Clean White
+secondaryBackgroundColor = "#F0F2F6"  # Light Grey
+textColor = "#262730"                 # Dark Charcoal
+
+# --- Dark Mode ("The Tech-Savvy" / App Interface Look) ---
+[theme.dark]
+primaryColor = "#66BB6A"              # Brighter Green (pops on dark)
+backgroundColor = "#0E1117"           # Deep Charcoal
+secondaryBackgroundColor = "#262730"  # Lighter Charcoal
+textColor = "#FAFAFA"                 # Pure White
+
+# Client settings (toolbar, etc.)
+[client]
+showErrorDetails = false
+toolbarMode = "viewer"
+

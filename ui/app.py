@@ -6,6 +6,8 @@ from utils import (
     get_nutrient,
     RECIPIES_FILE,
     filter_recipes_by_ids,
+    get_weekly_ingredients,
+    DOLLAR_PESO_RATE,
 )
 from genetic_algorithm import (
     generar_plan_2_dias_ga,
@@ -27,11 +29,11 @@ with st.sidebar:
     st.header("Configuración ⚙️")
     st.subheader("Ingresa tus macro nutrientes 🧮")
     st.caption("Cumplamos tus metas diarias :material/favorite:")
-    proteins_target = st.number_input("Proteinas (g)", value=150)
+    proteins_target = st.number_input("Proteinas (g)", value=250)
     fat_target = st.number_input("Grasa (g)", value=60)
     carbs_target = st.number_input("Carbohidratos (g)", value=200)
     kcal_target = st.number_input("Kcal", value=2000)
-    budget = st.number_input("Presupuesto Semanal", icon="💸", value=1500)
+    budget = st.number_input("Presupuesto Semanal", icon="💸", value=1000)
 
     option_map = {
         0: ":material/chef_hat: Generar compras",
@@ -60,8 +62,6 @@ with st.sidebar:
             "carbs": carbs_target,
             "fat": fat_target,
         }
-        # Here you would call your friend's function:
-        # st.session_state['weekly_data'] = efficient_recipe_selector(ingredients, macros, budget)
         data = load_and_prepare(RECIPIES_FILE)
         if mode == 1:
             result = generar_plan_2_dias_ga(
@@ -95,20 +95,37 @@ with st.sidebar:
 
 if "plan_generated" not in st.session_state:
     st.title("SciFitNoFat 🥗👨🏼‍🍳👩‍🔬")
-    st.markdown("## Propósito")
-    st.markdown("""
-        - SciFitNoFat offers highly personalized, sustainable, and affordable AI-powered meal plans.
-        - Powered by **Pantry-First™ Logic** and Multi-Objective Optimization to reduce cost & waste.
-    """)
-    st.info(
-        "👈 Por favor ingresa tus datos en la barra lateral y presiona 'Generar Plan'."
+    st.markdown("### 👋 ¡Bienvenido a tu Nutriólogo Personal de Bolsillo!")
+    st.markdown(
+        """
+        **SciFitNoFat** utiliza algoritmos inteligentes para crear el plan de alimentación perfecto que se ajusta a:
+        1.  **Tus Macros:** Cumple tus objetivos de fitness sin cálculos manuales.
+        2.  **Tu Bolsillo:** Optimiza ingredientes para reducir desperdicios y costos.
+        3.  **Tu Gusto:** Recetas mexicanas deliciosas y fáciles de preparar.
+        """
     )
 
-    # Preview of the layout (Placeholder)
-    # st.header("Vista Previa de Ingredientes")
-    # Mocking your existing ingredient logic
-    # st.write("Selecciona tus ingredientes (Simulado):")
-    # st.multiselect("Ingredientes", ["Aguacate", "Pollo", "Arroz"], ["Aguacate"])
+    st.divider()
+
+    # How it works visual guide
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("#### 🎯 1. Configura")
+        st.caption(
+            "Define tus metas de proteínas, grasas y carbohidratos en la barra lateral."
+        )
+    with c2:
+        st.markdown("#### 💸 2. Presupuesta")
+        st.caption("Establece tu límite de gasto semanal para evitar sorpresas.")
+    with c3:
+        st.markdown("#### 🥑 3. Cocina")
+        st.caption("Obtén tu menú detallado y lista de compras automática.")
+
+    st.divider()
+
+    st.info(
+        "👈 **Para comenzar:** Ajusta los valores en el panel izquierdo y haz clic en 'Generar Plan Semanal'."
+    )
 else:
     if mode == 1 and len(ingredients) == 0 and "plan_generated" in st.session_state:
         st.session_state["plan_generated"] = False
@@ -136,7 +153,8 @@ else:
 
                 # Progress bars comparing to targets
                 c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Costo del Día", f"${total_price:.2f}")
+                # Asumimos el dolar a 18.5
+                c1.metric("Costo del Día", f"${total_price * DOLLAR_PESO_RATE:.2f}")
                 c2.metric(
                     "Calorías Totales",
                     f"{total_cals:.0f}",
@@ -173,7 +191,7 @@ else:
                             m4.metric("Carbs", get_nutrient(recipe, "Carbohydrates"))
 
                             st.markdown(
-                                f"⏱️ **Tiempo:** {recipe['readyInMinutes']} mins | 💰 **Costo:** ${recipe['pricePerServing'] / 100:.2f}"
+                                f"⏱️ **Tiempo:** {recipe['readyInMinutes']} mins | 💰 **Costo:** ${(recipe['pricePerServing'] * DOLLAR_PESO_RATE) / 100:.2f}"
                             )
 
                             # Accordion for details (UX Best Practice: Progressive Disclosure)
@@ -201,7 +219,36 @@ else:
 
         # --- SHOPPING LIST SUMMARY (Outside tabs) ---
         with st.expander("🛒 Ver Lista de Compras Semanal (Resumen)"):
-            st.info("Aquí aparecería la suma de todos los ingredientes de la semana.")
+            # Calculate ingredients based on the plan
+            grocery_list = get_weekly_ingredients(weekly_plan)
+
+            if grocery_list:
+                st.markdown("### Ingredientes Necesarios")
+
+                # Display in columns for better readability
+                col_a, col_b = st.columns(2)
+
+                # Convert dictionary to a list of items for easy splitting
+                items = list(grocery_list.items())
+                mid_point = (len(items) + 1) // 2
+
+                with col_a:
+                    for ingredient, count in items[:mid_point]:
+                        # If count > 1, show multiplier, otherwise just the ingredient
+                        display_text = (
+                            f"{ingredient} (x{count})" if count > 1 else ingredient
+                        )
+                        st.checkbox(display_text, key=f"chk_{ingredient}")
+
+                with col_b:
+                    for ingredient, count in items[mid_point:]:
+                        display_text = (
+                            f"{ingredient} (x{count})" if count > 1 else ingredient
+                        )
+                        st.checkbox(display_text, key=f"chk_{ingredient}_b")
+
+            else:
+                st.info("No hay ingredientes en el plan actual.")
 
 st.markdown("---")
 st.caption(

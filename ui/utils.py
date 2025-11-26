@@ -1,7 +1,8 @@
 import json
 import random
 
-RECIPIES_FILE = "all_mexican_recipes.json"
+RECIPIES_FILE = "ui/data/all_mexican_recipes.json"
+DOLLAR_PESO_RATE = 18.5
 
 
 def load_mock_recipe():
@@ -147,3 +148,20 @@ def filter_recipes_by_ids(all_recipes, target_ids):
     ]
 
     return filtered_recipes
+
+
+def get_weekly_ingredients(weekly_plan):
+    """
+    Extracts all ingredients from the weekly plan and counts occurrences.
+    """
+    ingredients_counter = {}
+
+    for day, meals in weekly_plan.items():
+        for meal in meals:
+            for ingredient in meal.get("extendedIngredients", []):
+                # We use the 'original' string as the unique key
+                # In a real scenario with structured data, you would sum numeric amounts based on units
+                name = ingredient.get("original", "Unknown Ingredient")
+                ingredients_counter[name] = ingredients_counter.get(name, 0) + 1
+
+    return ingredients_counter
