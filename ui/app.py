@@ -229,33 +229,31 @@ else:
         # --- SHOPPING LIST SUMMARY (Outside tabs) ---
         with st.expander("🛒 Ver Lista de Compras Semanal (Resumen)"):
             # Calculate ingredients based on the plan
-            grocery_list = get_weekly_ingredients(weekly_plan)
+            grocery_list = get_weekly_ingredients(weekly_plan, mode)
+            col_a, col_b = st.columns(2)
 
-            if grocery_list:
-                st.markdown("### Ingredientes Necesarios")
-
-                # Display in columns for better readability
-                col_a, col_b = st.columns(2)
-
-                # Convert dictionary to a list of items for easy splitting
-                items = list(grocery_list.items())
-                mid_point = (len(items) + 1) // 2
-
+            if mode == 1:
                 with col_a:
-                    for ingredient, count in items[:mid_point]:
-                        # If count > 1, show multiplier, otherwise just the ingredient
-                        display_text = (
-                            f"{ingredient} (x{count})" if count > 1 else ingredient
-                        )
-                        st.checkbox(display_text, key=f"chk_{ingredient}")
+                    st.markdown("### Ingredientes elegidos")
+                    for ingredient in ingredients:
+                        st.checkbox(ingredient.title(), key=f"chk_{ingredient}_{mode}")
 
                 with col_b:
-                    for ingredient, count in items[mid_point:]:
-                        display_text = (
-                            f"{ingredient} (x{count})" if count > 1 else ingredient
-                        )
-                        st.checkbox(display_text, key=f"chk_{ingredient}_b")
+                    st.markdown("### Ingredientes faltantes")
+                    for ingredient in grocery_list:
+                        st.checkbox(ingredient.title(), key=f"chk_{ingredient}_{mode}")
+            elif mode == 0:
+                # Convert dictionary to a list of items for easy splitting
+                mid_point = (len(grocery_list) + 1) // 2
 
+                with col_a:
+                    grocery_list = list(grocery_list)
+                    for ingredient in grocery_list[:mid_point]:
+                        st.checkbox(ingredient.title(), key=f"chk_{ingredient}_{mode}")
+
+                with col_b:
+                    for ingredient in grocery_list[mid_point:]:
+                        st.checkbox(ingredient.title(), key=f"chk_{ingredient}_{mode}")
             else:
                 st.info("No hay ingredientes en el plan actual.")
 

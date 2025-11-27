@@ -1,7 +1,7 @@
 import json
 import random
 
-RECIPIES_FILE = "ui/data/mexican.json"
+RECIPIES_FILE = "ui/data/recipes_db.json"
 DOLLAR_PESO_RATE = 18.5
 
 
@@ -166,22 +166,23 @@ def filter_recipes_by_ids(all_recipes, target_ids):
     return filtered_recipes
 
 
-def get_weekly_ingredients(weekly_plan):
+def get_weekly_ingredients(weekly_plan: dict, mode: int) -> set:
     """
     Extracts all ingredients from the weekly plan and counts occurrences.
     """
-    ingredients_counter = {}
-
-    for day, meals in weekly_plan.items():
-        for meal in meals:
-            breakpoint()
-            for ingredient in meal.get("missed", []):
-                # We use the 'original' string as the unique key
-                # In a real scenario with structured data, you would sum numeric amounts based on units
-                name = ingredient.get("original", "Unknown Ingredient")
-                ingredients_counter[name] = ingredients_counter.get(name, 0) + 1
-
-    return ingredients_counter
+    ingredients = set()
+    if mode == 1:
+        for _, meals in weekly_plan.items():
+            for meal in meals:
+                ingredients.update(meal.get("missing", []))
+        return ingredients
+    elif mode == 0:
+        for _, meals in weekly_plan.items():
+            for meal in meals:
+                ingredients.update(
+                    [i.get("nameClean") for i in meal.get("extendedIngredients", [])]
+                )
+        return ingredients
 
 
 def filter_recipes_pantry(all_recipes, target_ids, recipes_info):
